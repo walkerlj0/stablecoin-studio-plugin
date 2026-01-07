@@ -1,0 +1,64 @@
+{
+  "name": "stablecoin-studio-plugin",
+  "version": "1.0.0",
+  "description": "Hedera Stablecoin Studio plugin for Hedera Agent Kit - enables AI agents to create and manage stablecoins",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "tsx examples/cli-chat.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"examples/**/*.ts\""
+  },
+  "keywords": [
+    "hedera",
+    "stablecoin",
+    "agent",
+    "ai",
+    "langchain",
+    "blockchain",
+    "cryptocurrency",
+    "hts",
+    "hedera-token-service"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@hashgraph/sdk": "^2.72.0",
+    "@hashgraph/stablecoin-npm-sdk": "*",
+    "@langchain/core": "^0.3.79",
+    "@langchain/openai": "^0.6.16",
+    "dotenv": "^17.2.3",
+    "hedera-agent-kit": "^3.5.2",
+    "langchain": "^0.3.36",
+    "prompts": "^2.4.2",
+    "tsup": "^8.5.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/prompts": "^2.4.9",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.2",
+    "vitest": "^1.6.0",
+    "@vitest/coverage-v8": "^1.6.0"
+  },
+  "peerDependencies": {
+    "@hashgraph/sdk": "^2.68.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
