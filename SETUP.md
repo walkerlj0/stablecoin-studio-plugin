@@ -2,6 +2,28 @@
 
 This guide will walk you through setting up the Stablecoin Studio Plugin for Hedera Agent Kit.
 
+This document contains two different workflows:
+
+- **[Testing/Developing the plugin locally](#testingdeveloping-the-plugin-locally-this-repo)** (this repo + `npm link`)
+- **[Using the plugin in your own agent project](#using-the-plugin-in-your-own-agent-project)** (your app repo + `.env` + agent code)
+
+## Contents
+
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Testing/Developing the Plugin Locally (this repo)](#testingdeveloping-the-plugin-locally-this-repo)
+- [Using the Plugin in Your Own Agent Project](#using-the-plugin-in-your-own-agent-project)
+- [Network Configuration](#network-configuration)
+- [Stablecoin Studio SDK Setup](#stablecoin-studio-sdk-setup)
+- [Basic Usage Example](#basic-usage-example)
+- [Testing Your Setup](#testing-your-setup)
+- [Troubleshooting](#troubleshooting)
+- [Best Practices](#best-practices)
+- [Next Steps](#next-steps)
+- [Additional Resources](#additional-resources)
+- [Support](#support)
+
 ## Prerequisites
 
 ### 1. Node.js and npm
@@ -56,6 +78,52 @@ npm install @langchain/core @langchain/openai langchain
 
 
 ## Configuration
+
+## Testing/Developing the Plugin Locally (this repo)
+
+Use this section if you're making changes to this repository and want to try them inside a local copy of Hedera Agent Kit (or another local app) without publishing to npm.
+
+### Testing Stablecoin Studio SDK Calls (Smoke Test)
+
+Use this subsection if you want to verify that the **Stablecoin Studio SDK** can connect to Hedera and make real calls (independent of the plugin tool implementations).
+
+You will create the following files in this plugin repo:
+
+- **Repo root:** `.env` (new file)
+- **Repo file:** `examples/stablecoin-studio-sdk-smoke-test.ts` (new file)
+
+#### Step 0: Create a .env in the repo root
+
+Create a file at:
+
+`stablecoin-studio-plugin/.env`
+
+With the following variables (you can copy `.env.example` and fill in values):
+
+```bash
+NETWORK=testnet
+HEDERA_ACCOUNT_ID=0.0.YOUR_ACCOUNT_ID
+HEDERA_PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HEX
+
+# Optional: Custom Endpoints
+MIRROR_NODE_URL=https://testnet.mirrornode.hedera.com
+JSON_RPC_URL=https://testnet.hashio.io/api
+```
+
+Note: The smoke test script accepts either naming convention:
+
+- `ACCOUNT_ID` / `PRIVATE_KEY`
+- `HEDERA_ACCOUNT_ID` / `HEDERA_PRIVATE_KEY`
+
+#### Step 1: Run the smoke test script
+
+From the repo root:
+
+```bash
+npx tsx examples/stablecoin-studio-sdk-smoke-test.ts
+```
+
+If successful, you should see output showing that the SDK connected and printed your account balance.
 
 ### Local Development Setup with npm link
 
@@ -189,6 +257,10 @@ npm run build  # This generates .d.ts files
 
 ---
 
+## Using the Plugin in Your Own Agent Project
+
+Use this section if you're building an agent (or any Node/TypeScript app) that consumes this plugin. These steps typically happen in your agent project's repository, not in this plugin repository.
+
 ### Step 1: Create Environment File
 
 Create a `.env` file in your project root:
@@ -206,6 +278,8 @@ JSON_RPC_URL=https://testnet.hashio.io/api
 # Optional: AI Model API Keys
 OPENAI_API_KEY=sk-...
 ```
+
+Note: Some example codebases use `HEDERA_ACCOUNT_ID` / `HEDERA_PRIVATE_KEY` instead of `ACCOUNT_ID` / `PRIVATE_KEY`. Either naming works as long as your code reads the same variables you set.
 
 **Security Note:** Never commit `.env` files to version control. Add `.env` to your `.gitignore`.
 
