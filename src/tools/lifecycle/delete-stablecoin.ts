@@ -1,10 +1,5 @@
 import { z } from 'zod';
-import {
-  Client,
-  type Context,
-  type Tool,
-  PromptGenerator,
-} from 'hedera-agent-kit';
+import { type Context, type Tool, PromptGenerator } from 'hedera-agent-kit';
 import { deleteStablecoinSchema } from '@/schemas/lifecycle.schema';
 import { DELETE_STABLECOIN_TOOL } from '@/utils/constants';
 
@@ -70,11 +65,7 @@ export default (context: Context): Tool => ({
   description: toolPrompt(context),
   parameters: deleteStablecoinSchema(context),
 
-  execute: async (
-    client: Client,
-    context: Context,
-    params: z.infer<ReturnType<typeof deleteStablecoinSchema>>
-  ) => {
+  execute: async (_client, _context, params) => {
     try {
       // Placeholder for actual Stablecoin Studio SDK integration
       const result = {

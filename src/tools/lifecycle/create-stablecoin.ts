@@ -1,10 +1,5 @@
 import { z } from 'zod';
-import {
-  Client,
-  type Context,
-  type Tool,
-  PromptGenerator,
-} from 'hedera-agent-kit';
+import { type Context, type Tool, PromptGenerator } from 'hedera-agent-kit';
 import { createStablecoinSchema } from '@/schemas/lifecycle.schema';
 import { CREATE_STABLECOIN_TOOL } from '@/utils/constants';
 
@@ -70,11 +65,7 @@ export default (context: Context): Tool => ({
   description: toolPrompt(context),
   parameters: createStablecoinSchema(context),
 
-  execute: async (
-    client: Client,
-    context: Context,
-    params: z.infer<ReturnType<typeof createStablecoinSchema>>
-  ) => {
+  execute: async (_client, _context, params) => {
     try {
       // Note: This is a placeholder for actual Stablecoin Studio SDK integration
       // The actual implementation will need to:
