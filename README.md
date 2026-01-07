@@ -12,6 +12,20 @@ A comprehensive plugin for [Hedera Agent Kit](https://github.com/hashgraph/heder
 - **Advanced Features**: Hold management (escrow), custom fee configuration
 - **Query Tools**: Balance checks, capability discovery, stablecoin listing
 
+🔧 Plugin Export:
+The src/index.ts file exports all 6 tools in a single plugin that satisfies the Hedera Agent Kit Plugin interface. The plugin is ready to be registered with the toolkit.
+
+📋 Schemas Created:
+atoms.ts - Common building blocks:
+accountIdSchema - Validates Hedera account IDs (0.0.xxxx format)
+tokenIdSchema - Validates token IDs
+memoSchema - Optional memo field (max 100 chars)
+roleSchema - Enum for all role types (ADMIN, CASHIN, BURN, etc.)
+supplyTypeSchema - FINITE or INFINITE supply
+amountSchema - Positive numbers for token amounts
+decimalsSchema - 0-18 decimal places (default 6)
+lifecycle.schema.ts - One schema per tool with proper Zod validation
+
 ## Installation
 
 ```bash
@@ -88,7 +102,7 @@ The stablecoin-studio-plugin is organized into 7 logical plugin groups:
 - `pause_stablecoin_tool` - Pause all operations
 - `unpause_stablecoin_tool` - Resume operations
 - `delete_stablecoin_tool` - Delete stablecoin
-
+<!-- 
 ### 2. Access Control Plugin (7 tools)
 - `grant_role_tool` - Grant operational roles
 - `revoke_role_tool` - Revoke roles
@@ -130,7 +144,7 @@ The stablecoin-studio-plugin is organized into 7 logical plugin groups:
 - `list_stablecoins_tool` - List all stablecoins
 - `get_capabilities_tool` - Get available operations
 - `check_association_tool` - Check token association
-- `associate_token_tool` - Associate token
+- `associate_token_tool` - Associate token -->
 
 ## Use Cases
 
@@ -236,10 +250,6 @@ stablecoin-studio-plugin
 - Hedera account with HBAR for transaction fees
 - Stablecoin Studio SDK access
 - LangChain (for AI agent integration)
-
-## Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
 ## License
 
