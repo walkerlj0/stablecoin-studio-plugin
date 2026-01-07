@@ -31,27 +31,6 @@ You need a Hedera account with:
 2. Create a new account
 3. Export your private key (Settings → Security)
 
-**Option C: Programmatically**
-```typescript
-import { Client, PrivateKey, AccountCreateTransaction, Hbar } from '@hashgraph/sdk';
-
-const client = Client.forTestnet();
-client.setOperator(operatorId, operatorKey);
-
-const newPrivateKey = PrivateKey.generate();
-const newPublicKey = newPrivateKey.publicKey;
-
-const transaction = new AccountCreateTransaction()
-  .setKey(newPublicKey)
-  .setInitialBalance(new Hbar(10));
-
-const txResponse = await transaction.execute(client);
-const receipt = await txResponse.getReceipt(client);
-const newAccountId = receipt.accountId;
-
-console.log('New Account ID:', newAccountId.toString());
-console.log('Private Key:', newPrivateKey.toString());
-```
 
 ### 3. OpenAI API Key (Optional)
 
@@ -75,16 +54,140 @@ For LangChain integration:
 npm install @langchain/core @langchain/openai langchain
 ```
 
-For other frameworks:
-```bash
-# ElizaOS
-npm install @elizaos/core
-
-# AI SDK
-npm install ai @ai-sdk/openai
-```
 
 ## Configuration
+
+### Local Development Setup with npm link
+
+If you're developing this plugin locally or testing it with a local copy of Hedera Agent Kit, use `npm link` to create a symlink instead of publishing to npm.
+
+#### Step 1: Build and Link the Plugin
+
+In the stablecoin plugin directory:
+
+```bash
+cd /path/to/stablecoin-studio-plugin
+
+# Install dependencies
+npm install
+
+# Build the plugin
+npm run build
+
+# Create a global symlink
+npm link
+```
+
+**Expected output:**
+```
+✓ Successfully created global symlink for stablecoin-studio-plugin
+```
+
+#### Step 2: Link to Hedera Agent Kit
+
+In the Hedera Agent Kit directory:
+
+```bash
+cd /path/to/hedera-agent-kit-js
+
+# Link to the local plugin
+npm link stablecoin-studio-plugin
+```
+
+**Expected output:**
+```
+✓ Successfully linked stablecoin-studio-plugin
+```
+
+#### Step 3: Verify the Link
+
+Check that the plugin is linked correctly:
+
+```bash
+# In hedera-agent-kit-js directory
+ls -la node_modules/stablecoin-studio-plugin
+
+# Should show a symlink pointing to your local plugin directory
+# lrwxr-xr-x  1 user  staff  ... stablecoin-studio-plugin -> /path/to/stablecoin-studio-plugin
+```
+
+#### Step 4: Use the Plugin
+
+Now you can import and use the plugin in your Hedera Agent Kit examples:
+
+```typescript
+// In hedera-agent-kit-js/examples/test-stablecoin.ts
+import { Client } from '@hashgraph/sdk';
+import { HederaLangchainToolkit } from '../src'; // or 'hedera-agent-kit'
+import stablecoinPlugin from 'stablecoin-studio-plugin';
+
+const client = Client.forTestnet();
+client.setOperator(process.env.HEDERA_ACCOUNT_ID!, process.env.HEDERA_PRIVATE_KEY!);
+
+const toolkit = new HederaLangchainToolkit({
+  client,
+  configuration: {
+    plugins: [stablecoinPlugin]
+  }
+});
+
+console.log('Loaded tools:', toolkit.tools.map(t => t.name));
+```
+
+#### Step 5: Making Changes
+
+When you make changes to the plugin:
+
+```bash
+# In stablecoin-studio-plugin directory
+npm run build
+
+# Changes are immediately available in hedera-agent-kit-js
+# No need to re-link!
+```
+
+#### Step 6: Unlinking (When Done Testing)
+
+To remove the symlink:
+
+```bash
+# In hedera-agent-kit-js directory
+npm unlink stablecoin-studio-plugin
+
+# To completely remove the global link (optional)
+cd /path/to/stablecoin-studio-plugin
+npm unlink
+```
+
+#### Troubleshooting npm link
+
+**Issue: Changes not appearing**
+
+Solution: Make sure to rebuild after changes:
+```bash
+cd /path/to/stablecoin-studio-plugin
+npm run build
+```
+
+**Issue: Module not found after linking**
+
+Solution: Check that both link commands succeeded:
+```bash
+# Should show your plugin
+npm ls -g --depth=0 | grep stablecoin-studio-plugin
+
+# In hedera-agent-kit-js, should show link
+ls -la node_modules/stablecoin-studio-plugin
+```
+
+**Issue: TypeScript errors**
+
+Solution: Ensure types are built:
+```bash
+npm run build  # This generates .d.ts files
+```
+
+---
 
 ### Step 1: Create Environment File
 
