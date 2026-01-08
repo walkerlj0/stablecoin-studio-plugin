@@ -1,7 +1,12 @@
-import { z } from 'zod';
+
 import { type Context, type Tool, PromptGenerator } from 'hedera-agent-kit';
+import {
+  StableCoin,
+  UpdateRequest,
+} from '@hashgraph/stablecoin-npm-sdk';
 import { updateStablecoinSchema } from '@/schemas/lifecycle.schema';
 import { UPDATE_STABLECOIN_TOOL } from '@/utils/constants';
+import { getStablecoinSDK } from '@/service/stablecoin-sdk.service';
 
 /**
  * Tool constant for updating stablecoin properties
@@ -55,13 +60,17 @@ export default (context: Context): Tool => ({
   description: toolPrompt(context),
   parameters: updateStablecoinSchema(context),
 
-  execute: async (_client, _context, params) => {
+  execute: async (client, context, params) => {
     try {
-      // Placeholder for actual Stablecoin Studio SDK integration
+      // Initialize SDK connection
+      const sdk = getStablecoinSDK();
+      await sdk.ensureInitialized(client, context);
+
+      // Track which fields are being updated
       const updatedFields: string[] = [];
       if (params.name) updatedFields.push('name');
       if (params.symbol) updatedFields.push('symbol');
-      if (params.memo) updatedFields.push('memo');
+      if (params.memo) updatedFields.push('metadata');
 
       if (updatedFields.length === 0) {
         return {
@@ -71,18 +80,33 @@ export default (context: Context): Tool => ({
         };
       }
 
+      // Build UpdateRequest with provided fields
+      const updateRequest = new UpdateRequest({
+        tokenId: params.tokenId,
+        name: params.name,
+        symbol: params.symbol,
+        metadata: params.memo,
+      });
+
+      // Execute the update
+      const success = await StableCoin.update(updateRequest);
+
+      if (!success) {
+        throw new Error('Update operation returned false');
+      }
+
       const result = {
         tokenId: params.tokenId,
-        transactionId: 'PLACEHOLDER_TX_ID',
+        success,
         updatedFields,
         newValues: {
           name: params.name,
           symbol: params.symbol,
-          memo: params.memo,
+          metadata: params.memo,
         },
       };
 
-      const humanMessage = `Successfully updated stablecoin ${params.tokenId}. Updated fields: ${updatedFields.join(', ')}. Transaction ID: ${result.transactionId}`;
+      const humanMessage = `Successfully updated stablecoin ${params.tokenId}. Updated fields: ${updatedFields.join(', ')}`;
 
       return {
         raw: result,

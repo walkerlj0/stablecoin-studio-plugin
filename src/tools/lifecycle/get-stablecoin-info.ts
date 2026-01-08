@@ -1,7 +1,12 @@
-import { z } from 'zod';
+
 import { type Context, type Tool, PromptGenerator } from 'hedera-agent-kit';
+import {
+  StableCoin,
+  GetStableCoinDetailsRequest,
+} from '@hashgraph/stablecoin-npm-sdk';
 import { getStablecoinInfoSchema } from '@/schemas/lifecycle.schema';
 import { GET_STABLECOIN_INFO_TOOL } from '@/utils/constants';
+import { getStablecoinSDK } from '@/service/stablecoin-sdk.service';
 
 /**
  * Tool constant for getting stablecoin information
@@ -59,32 +64,51 @@ export default (context: Context): Tool => ({
   description: toolPrompt(context),
   parameters: getStablecoinInfoSchema(context),
 
-  execute: async (_client, _context, params) => {
+  execute: async (client, context, params) => {
     try {
-      // Placeholder for actual Stablecoin Studio SDK integration
+      // Initialize SDK connection
+      const sdk = getStablecoinSDK();
+      await sdk.ensureInitialized(client, context);
+
+      // Get stablecoin details
+      const request = new GetStableCoinDetailsRequest({ id: params.tokenId });
+      const coinInfo = await StableCoin.getInfo(request);
+
+      // Extract key information
       const result = {
-        tokenId: params.tokenId,
-        name: 'Placeholder Stablecoin',
-        symbol: 'PLACEHOLDER',
-        decimals: 6,
-        totalSupply: '0',
-        maxSupply: undefined,
-        treasury: '0.0.TREASURY',
-        pauseStatus: false,
-        deleted: false,
+        tokenId: coinInfo.tokenId?.toString() || params.tokenId,
+        name: coinInfo.name,
+        symbol: coinInfo.symbol,
+        decimals: coinInfo.decimals,
+        totalSupply: coinInfo.totalSupply?.toString(),
+        maxSupply: coinInfo.maxSupply?.toString(),
+        initialSupply: coinInfo.initialSupply?.toString(),
+        treasury: coinInfo.treasury?.toString(),
+        paused: coinInfo.paused,
+        deleted: coinInfo.deleted,
+        freezeDefault: coinInfo.freezeDefault,
+        proxyAddress: coinInfo.proxyAddress?.toString(),
+        evmProxyAddress: coinInfo.evmProxyAddress?.toString(),
+        reserveAddress: coinInfo.reserveAddress?.toString(),
+        reserveAmount: coinInfo.reserveAmount?.toString(),
         keys: {
-          kycKey: '0.0.OPERATOR',
-          freezeKey: '0.0.OPERATOR',
-          wipeKey: '0.0.OPERATOR',
-          pauseKey: '0.0.OPERATOR',
-          feeScheduleKey: '0.0.OPERATOR',
+          adminKey: coinInfo.adminKey?.toString(),
+          kycKey: coinInfo.kycKey?.toString(),
+          freezeKey: coinInfo.freezeKey?.toString(),
+          wipeKey: coinInfo.wipeKey?.toString(),
+          supplyKey: coinInfo.supplyKey?.toString(),
+          pauseKey: coinInfo.pauseKey?.toString(),
+          feeScheduleKey: coinInfo.feeScheduleKey?.toString(),
         },
-        roles: [],
-        reserveAddress: undefined,
-        customFees: [],
+        expirationTime: coinInfo.expirationTime,
+        autoRenewAccount: coinInfo.autoRenewAccount?.toString(),
+        autoRenewPeriod: coinInfo.autoRenewPeriod,
+        customFees: coinInfo.customFees,
+        metadata: coinInfo.metadata,
       };
 
-      const humanMessage = `Stablecoin ${params.tokenId}: "${result.name}" (${result.symbol}), ${result.decimals} decimals, total supply: ${result.totalSupply}, treasury: ${result.treasury}, ${result.pauseStatus ? 'PAUSED' : 'ACTIVE'}`;
+      const statusText = result.paused ? 'PAUSED' : result.deleted ? 'DELETED' : 'ACTIVE';
+      const humanMessage = `Stablecoin ${result.tokenId}: "${result.name}" (${result.symbol}), ${result.decimals} decimals, total supply: ${result.totalSupply}, treasury: ${result.treasury}, status: ${statusText}${result.reserveAddress ? `, reserve: ${result.reserveAddress}` : ''}`;
 
       return {
         raw: result,

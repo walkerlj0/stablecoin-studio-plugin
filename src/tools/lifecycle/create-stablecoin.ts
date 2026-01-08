@@ -1,7 +1,12 @@
-import { z } from 'zod';
 import { type Context, type Tool, PromptGenerator } from 'hedera-agent-kit';
+import {
+  StableCoin,
+  CreateRequest,
+  TokenSupplyType,
+} from '@hashgraph/stablecoin-npm-sdk';
 import { createStablecoinSchema } from '@/schemas/lifecycle.schema';
 import { CREATE_STABLECOIN_TOOL } from '@/utils/constants';
+import { getStablecoinSDK } from '@/service/stablecoin-sdk.service';
 
 /**
  * Tool constant for creating a stablecoin
@@ -65,37 +70,92 @@ export default (context: Context): Tool => ({
   description: toolPrompt(context),
   parameters: createStablecoinSchema(context),
 
-  execute: async (_client, _context, params) => {
+  execute: async (client, context, params) => {
     try {
-      // Note: This is a placeholder for actual Stablecoin Studio SDK integration
-      // The actual implementation will need to:
-      // 1. Initialize the Stablecoin Studio SDK
-      // 2. Call the appropriate SDK method to create the stablecoin
-      // 3. Handle the response and format it appropriately
+      // Initialize SDK connection
+      const sdk = getStablecoinSDK();
+      await sdk.ensureInitialized(client, context);
 
-      // For now, we'll return a structured placeholder response
-      const result = {
-        tokenId: '0.0.PLACEHOLDER',
-        proxyAddress: params.proofOfReserve
-          ? '0.0.PLACEHOLDER_PROXY'
-          : undefined,
-        reserveAddress: params.proofOfReserve
-          ? '0.0.PLACEHOLDER_RESERVE'
-          : undefined,
-        transactionId: 'PLACEHOLDER_TX_ID',
+      // Get operator account ID for role assignments
+      const operatorAccountId =
+        client?.operatorAccountId?.toString() ||
+        process.env.HEDERA_ACCOUNT_ID ||
+        '';
+
+      if (!operatorAccountId) {
+        throw new Error('Operator account ID not found');
+      }
+
+      // Determine supply type
+      const supplyType = params.maxSupply !== undefined
+        ? TokenSupplyType.FINITE
+        : (params.supplyType === 'FINITE' ? TokenSupplyType.FINITE : TokenSupplyType.INFINITE);
+
+      // Build CreateRequest with all parameters
+      const createRequest = new CreateRequest({
         name: params.name,
         symbol: params.symbol,
         decimals: params.decimals,
-        initialSupply: params.initialSupply,
-        maxSupply: params.maxSupply,
-        supplyType: params.supplyType,
+        initialSupply: params.initialSupply?.toString() || '0',
+        maxSupply: params.maxSupply?.toString(),
+        supplyType,
+        metadata: params.memo,
+
+        // Keys - use 'null' string to indicate no key, or operator account
+        freezeKey: params.freezeKey ? { key: params.freezeKey, type: 'ED25519' } : { key: 'null', type: 'null' },
+        kycKey: params.kycKey ? { key: params.kycKey, type: 'ED25519' } : { key: 'null', type: 'null' },
+        wipeKey: params.wipeKey ? { key: params.wipeKey, type: 'ED25519' } : { key: 'null', type: 'null' },
+        pauseKey: params.pauseKey ? { key: params.pauseKey, type: 'ED25519' } : { key: 'null', type: 'null' },
+        feeScheduleKey: params.feeScheduleKey ? { key: params.feeScheduleKey, type: 'ED25519' } : { key: 'null', type: 'null' },
+
+        // Reserve configuration
+        createReserve: params.proofOfReserve || false,
+
+        // Role assignments - default to operator account
+        burnRoleAccount: operatorAccountId,
+        wipeRoleAccount: operatorAccountId,
+        rescueRoleAccount: operatorAccountId,
+        pauseRoleAccount: operatorAccountId,
+        freezeRoleAccount: operatorAccountId,
+        deleteRoleAccount: operatorAccountId,
+        kycRoleAccount: operatorAccountId,
+        cashInRoleAccount: operatorAccountId,
+        feeRoleAccount: operatorAccountId,
+        proxyOwnerAccount: operatorAccountId,
+
+        // Grant KYC to original sender by default
+        grantKYCToOriginalSender: true,
+
+        // Default allowances
+        cashInRoleAllowance: '0',
+
+        // Configuration IDs (using defaults from examples)
+        configId: '0x0000000000000000000000000000000000000000000000000000000000000002',
+        configVersion: 1,
+      });
+
+      // Create the stablecoin
+      const stableCoin = await StableCoin.create(createRequest);
+
+      // Extract result data from SDK response
+      const result = {
+        tokenId: stableCoin?.coin?.tokenId?.toString() || '',
+        proxyAddress: stableCoin?.coin?.proxyAddress?.toString(),
+        reserveAddress: stableCoin?.coin?.reserveAddress?.toString(),
+        treasury: stableCoin?.coin?.treasury?.toString(),
+        name: stableCoin?.coin?.name || params.name,
+        symbol: stableCoin?.coin?.symbol || params.symbol,
+        decimals: stableCoin?.coin?.decimals || params.decimals,
+        totalSupply: stableCoin?.coin?.totalSupply?.toString(),
+        maxSupply: stableCoin?.coin?.maxSupply?.toString(),
+        paused: stableCoin?.coin?.paused,
       };
 
-      const humanMessage = `Successfully created stablecoin "${params.name}" (${params.symbol}) with token ID ${result.tokenId}. ${
-        params.proofOfReserve
-          ? `Proof of reserve enabled with reserve address ${result.reserveAddress}.`
+      const humanMessage = `Successfully created stablecoin "${result.name}" (${result.symbol}) with token ID ${result.tokenId}. ${
+        stableCoin?.coin?.reserveAddress
+          ? `Proof of reserve enabled with reserve address ${result.reserveAddress}. `
           : ''
-      } Transaction ID: ${result.transactionId}`;
+      }Treasury: ${result.treasury}`;
 
       return {
         raw: result,

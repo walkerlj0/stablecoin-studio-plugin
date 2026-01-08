@@ -1,7 +1,12 @@
-import { z } from 'zod';
+
 import { type Context, type Tool, PromptGenerator } from 'hedera-agent-kit';
+import {
+  StableCoin,
+  PauseRequest,
+} from '@hashgraph/stablecoin-npm-sdk';
 import { unpauseStablecoinSchema } from '@/schemas/lifecycle.schema';
 import { UNPAUSE_STABLECOIN_TOOL } from '@/utils/constants';
+import { getStablecoinSDK } from '@/service/stablecoin-sdk.service';
 
 /**
  * Tool constant for unpausing a stablecoin
@@ -55,17 +60,32 @@ export default (context: Context): Tool => ({
   description: toolPrompt(context),
   parameters: unpauseStablecoinSchema(context),
 
-  execute: async (_client, _context, params) => {
+  execute: async (client, context, params) => {
     try {
-      // Placeholder for actual Stablecoin Studio SDK integration
+      // Initialize SDK connection
+      const sdk = getStablecoinSDK();
+      await sdk.ensureInitialized(client, context);
+
+      // Create unpause request (uses PauseRequest)
+      const unpauseRequest = new PauseRequest({
+        tokenId: params.tokenId,
+      });
+
+      // Execute the unpause operation
+      const success = await StableCoin.unPause(unpauseRequest);
+
+      if (!success) {
+        throw new Error('Unpause operation returned false');
+      }
+
       const result = {
         tokenId: params.tokenId,
-        transactionId: 'PLACEHOLDER_TX_ID',
+        success,
         status: 'ACTIVE',
         timestamp: new Date().toISOString(),
       };
 
-      const humanMessage = `Successfully unpaused stablecoin ${params.tokenId}. Token operations are now enabled. Transaction ID: ${result.transactionId}`;
+      const humanMessage = `Successfully unpaused stablecoin ${params.tokenId}. Token operations are now enabled.`;
 
       return {
         raw: result,

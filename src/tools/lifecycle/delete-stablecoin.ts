@@ -1,7 +1,12 @@
-import { z } from 'zod';
+
 import { type Context, type Tool, PromptGenerator } from 'hedera-agent-kit';
+import {
+  StableCoin,
+  DeleteRequest,
+} from '@hashgraph/stablecoin-npm-sdk';
 import { deleteStablecoinSchema } from '@/schemas/lifecycle.schema';
 import { DELETE_STABLECOIN_TOOL } from '@/utils/constants';
+import { getStablecoinSDK } from '@/service/stablecoin-sdk.service';
 
 /**
  * Tool constant for deleting a stablecoin
@@ -65,17 +70,32 @@ export default (context: Context): Tool => ({
   description: toolPrompt(context),
   parameters: deleteStablecoinSchema(context),
 
-  execute: async (_client, _context, params) => {
+  execute: async (client, context, params) => {
     try {
-      // Placeholder for actual Stablecoin Studio SDK integration
+      // Initialize SDK connection
+      const sdk = getStablecoinSDK();
+      await sdk.ensureInitialized(client, context);
+
+      // Create delete request
+      const deleteRequest = new DeleteRequest({
+        tokenId: params.tokenId,
+      });
+
+      // Execute the delete operation
+      const success = await StableCoin.delete(deleteRequest);
+
+      if (!success) {
+        throw new Error('Delete operation returned false');
+      }
+
       const result = {
         tokenId: params.tokenId,
-        transactionId: 'PLACEHOLDER_TX_ID',
+        success,
         status: 'DELETED',
         timestamp: new Date().toISOString(),
       };
 
-      const humanMessage = `Successfully deleted stablecoin ${params.tokenId}. This operation is permanent and cannot be reversed. Transaction ID: ${result.transactionId}`;
+      const humanMessage = `Successfully deleted stablecoin ${params.tokenId}. This operation is permanent and cannot be reversed.`;
 
       return {
         raw: result,
