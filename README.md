@@ -12,10 +12,18 @@ A comprehensive plugin for [Hedera Agent Kit](https://github.com/hashgraph/heder
 - **Advanced Features**: Hold management (escrow), custom fee configuration
 - **Query Tools**: Balance checks, capability discovery, stablecoin listing
 
-🔧 Plugin Export:
-The src/index.ts file exports all 6 tools in a single plugin that satisfies the Hedera Agent Kit Plugin interface. The plugin is ready to be registered with the toolkit.
+### SDK Service Layer (src/service/stablecoin-sdk.service.ts)
+Created a singleton service that handles:
+Network initialization with Network.init()
+Account connection with Network.connect()
+Configuration management from environment variables
+Support for both testnet and mainnet
+Idempotent initialization (safe to call multiple times)
 
-📋 Schemas Created:
+### Plugin Export:
+The src/index.ts file exports all 6 tools in a single plugin that satisfies the Hedera Agent Kit Plugin interface. 
+
+### Schemas:
 atoms.ts - Common building blocks:
 accountIdSchema - Validates Hedera account IDs (0.0.xxxx format)
 tokenIdSchema - Validates token IDs
@@ -192,23 +200,20 @@ OPENAI_API_KEY=your_openai_key  # For LangChain examples using OpenAI
 
 See the `examples/` directory for complete working examples:
 
-- `stablecoin-agent.ts` - Full LangChain agent implementation
-- Treasury management scenarios
-- Compliance workflows
-- Multi-role coordination
+
+- `stablecoin-studio-sdk-smoke-test.ts` - Smoke test for initializing and connecting with the Stablecoin Studio SDK
 
 Run examples:
 ```bash
-cd examples
 npm install
-npm run stablecoin-agent
+npx tsx examples/stablecoin-studio-sdk-smoke-test.ts
 ```
 
 ## Documentation
 
 - [Setup Guide](./SETUP.md) - Detailed setup instructions
 - [Product Requirements Document](./.windsurf/PRD.md) - Complete feature specification
-- [API Reference](./docs/API.md) - Tool parameter reference (coming soon)
+- [Architecture](./docs/ARCHITECTURE.md) - Plugin architecture details
 
 ## Development
 

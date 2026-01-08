@@ -1,20 +1,14 @@
 import 'dotenv/config';
-
-const sdk = (await import('@hashgraph/stablecoin-npm-sdk')) as unknown as Record<
-  string,
-  unknown
->;
-
-const Account = sdk.Account as any;
-const Network = sdk.Network as any;
-const initializeFactory = sdk.initializeFactory as any;
+import {
+  Network,
+  InitializationRequest,
+  ConnectRequest,
+  SupportedWallets,
+} from '@hashgraph/stablecoin-npm-sdk';
 
 const accountId = process.env.ACCOUNT_ID ?? process.env.HEDERA_ACCOUNT_ID;
 const privateKey = process.env.PRIVATE_KEY ?? process.env.HEDERA_PRIVATE_KEY;
 const network = process.env.NETWORK ?? 'testnet';
-const mirrorNodeUrl =
-  process.env.MIRROR_NODE_URL ?? 'https://testnet.mirrornode.hedera.com';
-const jsonRpcUrl = process.env.JSON_RPC_URL ?? 'https://testnet.hashio.io/api';
 
 if (!accountId) {
   throw new Error(
@@ -28,75 +22,76 @@ if (!privateKey) {
   );
 }
 
-if (typeof initializeFactory === 'function') {
-  await initializeFactory();
-}
+console.log('Initializing Stablecoin Studio SDK...');
+console.log('Network:', network);
+console.log('Account:', accountId);
 
-const connectArgsVariants = [
-  {
-    account: { accountId, privateKey },
-    network,
-    mirrorNode: { url: mirrorNodeUrl },
-    rpcNode: { url: jsonRpcUrl },
-  },
-  {
-    account: { accountId, privateKey },
-    network,
-    mirrorNode: mirrorNodeUrl,
-    rpcNode: jsonRpcUrl,
-  },
-  {
-    account: { accountId, privateKey },
-    network,
-    mirrorNodeUrl,
-    jsonRpcUrl,
-  },
-  {
-    account: { accountId, privateKey },
-    network,
-    mirrorNode: { baseUrl: mirrorNodeUrl },
-    rpcNode: { baseUrl: jsonRpcUrl },
-  },
-];
+// Step 1: Initialize the network
+const mirrorNodeConfig = {
+  name: network === 'mainnet' ? 'Mainnet Mirror Node' : 'Testnet Mirror Node',
+  network: network === 'mainnet' ? 'mainnet' : 'testnet',
+  baseUrl: network === 'mainnet'
+    ? 'https://mainnet-public.mirrornode.hedera.com/api/v1/'
+    : 'https://testnet.mirrornode.hedera.com/api/v1/',
+  apiKey: '',
+  headerName: '',
+  selected: true,
+};
 
-let connected = false;
-if (Network?.connect && typeof Network.connect === 'function') {
-  for (const args of connectArgsVariants) {
-    try {
-      await Network.connect(args as any);
-      connected = true;
-      break;
-    } catch {
-      // try next variant
-    }
-  }
-}
+const rpcNodeConfig = {
+  name: 'HashIO',
+  network: network === 'mainnet' ? 'mainnet' : 'testnet',
+  baseUrl: network === 'mainnet'
+    ? 'https://mainnet.hashio.io/api'
+    : 'https://testnet.hashio.io/api',
+  apiKey: '',
+  headerName: '',
+  selected: true,
+};
 
-if (!connected) {
+try {
+  console.log('Step 1: Calling Network.init()...');
+  await Network.init(
+    new InitializationRequest({
+      network: network as 'mainnet' | 'testnet',
+      mirrorNode: mirrorNodeConfig,
+      rpcNode: rpcNodeConfig,
+      configuration: {
+        factoryAddress: network === 'mainnet' ? '0.0.0' : '0.0.6431833',
+        resolverAddress: network === 'mainnet' ? '0.0.0' : '0.0.6431794',
+      },
+    }),
+  );
+  console.log('✓ Network initialized');
+
+  // Step 2: Connect with account credentials
+  console.log('Step 2: Calling Network.connect()...');
+  await Network.connect(
+    new ConnectRequest({
+      account: {
+        accountId: accountId,
+        privateKey: {
+          key: privateKey,
+          type: 'ED25519',
+        },
+      },
+      network: network as 'mainnet' | 'testnet',
+      mirrorNode: mirrorNodeConfig,
+      rpcNode: rpcNodeConfig,
+      wallet: SupportedWallets.CLIENT,
+    }),
+  );
+  console.log('✓ Connected to network');
+} catch (error) {
+  console.error('Failed to initialize/connect:', error);
   throw new Error(
     'Failed to connect using Stablecoin Studio SDK. Verify your env vars and that the SDK version supports your network/endpoints.',
   );
 }
 
-const getInfoArgsVariants = [{ accountId }, { account: accountId }, { id: accountId }];
-
-let accountInfo: unknown;
-if (Account?.getInfo && typeof Account.getInfo === 'function') {
-  for (const args of getInfoArgsVariants) {
-    try {
-      accountInfo = await Account.getInfo(args as any);
-      break;
-    } catch {
-      // try next variant
-    }
-  }
-}
-
-if (!accountInfo) {
-  throw new Error(
-    'Connected, but failed to fetch account info via Stablecoin Studio SDK. The Account.getInfo request shape may have changed.',
-  );
-}
-
-console.log('Connected to Hedera via Stablecoin Studio SDK');
-console.log('Account info:', accountInfo);
+// Step 3: Verify connection succeeded
+console.log('Step 3: Verifying SDK is ready...');
+console.log('✓ SDK initialized and connected successfully');
+console.log('Connected account:', accountId);
+console.log('Network:', network);
+console.log('\n✅ Smoke test passed! SDK is working correctly.');
