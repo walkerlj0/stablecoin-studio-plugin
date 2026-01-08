@@ -280,39 +280,7 @@ stablecoin-studio-plugin/
 - **No plugins/** subfolder - tools are organized by category directly
 - **utils/** includes template utilities (decimals, mirrornode)
 
-### 5.2 AGENTS.md Files - AI Agent Instructions
-
-The plugin includes **three levels of AGENTS.md documentation** to guide AI agents:
-
-#### **Root AGENTS.md**
-Primary instructions for agents working on the plugin:
-- Project overview and purpose
-- Setup commands (install, typecheck, lint, build, format, test)
-- Environment variables and secrets
-- Tool structure and Agent Mode concept (AUTONOMOUS vs RETURN_BYTES)
-- Development workflow
-
-#### **src/tools/AGENTS.md**
-Instructions for implementing individual tools:
-- Tool structure (method, name, description, parameters, execute)
-- Transaction tool skeleton using `handleTransaction`
-- Read-only tool skeleton for queries
-- PromptGenerator utility usage
-- Quality standards
-- Return value format
-
-#### **src/schemas/AGENTS.md**
-Instructions for creating Zod schemas:
-- Schema factory pattern
-- Common atoms (accountIdSchema, memoSchema, etc.)
-- `.describe()` requirements for all fields
-- TypeScript inference with `z.infer`
-
-**CRITICAL**: These files are the primary documentation for AI agents building this plugin. Copy the content from template-hedera-agent-kit-plugin and adapt for stablecoin operations.
-
----
-
-### 5.3 Core Files
+### 5.2 Core Files
 
 #### **index.ts**
 Main plugin export using `satisfies Plugin` pattern from template:
@@ -353,7 +321,7 @@ export * from '@/utils/constants';
 
 ---
 
-### 5.4 Tool Implementation Pattern (from Template)
+### 5.3 Tool Implementation Pattern (from Template)
 
 Every tool follows the template's standard pattern:
 
@@ -431,7 +399,7 @@ export default (context: Context): Tool => ({
 
 ---
 
-### 5.5 Schema Pattern (from Template)
+### 5.4 Schema Pattern (from Template)
 
 ```typescript
 // Example: src/schemas/treasury.schema.ts
@@ -460,7 +428,7 @@ export type CashInParams = z.infer<ReturnType<typeof cashInSchema>>;
 
 ---
 
-### 5.6 Common Schema Atoms
+### 5.5 Common Schema Atoms
 
 ```typescript
 // src/schemas/atoms.ts
@@ -488,7 +456,7 @@ export const roleSchema = z
 
 ---
 
-### 5.7 Utility Files (from Template)
+### 5.6 Utility Files (from Template)
 
 #### **decimals.ts**
 ```typescript
