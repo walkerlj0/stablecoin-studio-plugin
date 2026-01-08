@@ -187,98 +187,45 @@ Following the **template-hedera-agent-kit-plugin** structure (PRIMARY REFERENCE)
 stablecoin-studio-plugin/
 ├── .git/
 ├── .gitignore
-├── .env.example                   # Environment variable template
-├── LICENSE                        # Apache License 2.0
-├── AGENTS.md                      # PRIMARY: Agent instructions (root level)
-├── CLAUDE.md                      # Copy of AGENTS.md for compatibility
+├── .env
+├── .env.example
+├── LICENSE
 ├── .windsurf/
-│   └── PRD.md                     # This document
+│   └── PRD.md
 ├── eslint.config.mjs
 ├── package.json
 ├── package-lock.json
-├── tsconfig.json                  # With path aliases (@/*)
+├── tsconfig.json
 ├── tsup.config.ts
 ├── README.md
 ├── SETUP.md
 ├── examples/
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── agent.ts                   # LangChain agent factory
-│   └── cli-chat.ts                # Interactive CLI chatbot demo
+│   └── stablecoin-studio-sdk-smoke-test.ts
 └── src/
-    ├── index.ts                   # Plugin export (uses `satisfies Plugin`)
+    ├── index.ts
     ├── tools/
-    │   ├── AGENTS.md              # Tool-specific agent instructions
-    │   ├── lifecycle/
-    │   │   ├── create-stablecoin.ts
-    │   │   ├── get-stablecoin-info.ts
-    │   │   ├── update-stablecoin.ts
-    │   │   ├── pause-stablecoin.ts
-    │   │   ├── unpause-stablecoin.ts
-    │   │   └── delete-stablecoin.ts
-    │   ├── access-control/
-    │   │   ├── grant-role.ts
-    │   │   ├── revoke-role.ts
-    │   │   ├── check-role.ts
-    │   │   ├── get-account-roles.ts
-    │   │   ├── get-accounts-with-role.ts
-    │   │   ├── manage-allowance.ts
-    │   │   └── get-allowance.ts
-    │   ├── compliance/
-    │   │   ├── grant-kyc.ts
-    │   │   ├── revoke-kyc.ts
-    │   │   ├── check-kyc.ts
-    │   │   ├── freeze-account.ts
-    │   │   └── unfreeze-account.ts
-    │   ├── treasury/
-    │   │   ├── cash-in.ts
-    │   │   ├── burn.ts
-    │   │   ├── wipe.ts
-    │   │   ├── transfer.ts
-    │   │   ├── rescue-token.ts
-    │   │   └── rescue-hbar.ts
-    │   ├── reserve/
-    │   │   ├── get-reserve-amount.ts
-    │   │   └── update-reserve-amount.ts
-    │   ├── advanced/
-    │   │   ├── create-hold.ts
-    │   │   ├── execute-hold.ts
-    │   │   ├── release-hold.ts
-    │   │   ├── add-fixed-fee.ts
-    │   │   ├── add-fractional-fee.ts
-    │   │   └── update-fee-schedule.ts
-    │   └── query/
-    │       ├── get-balance.ts
-    │       ├── list-stablecoins.ts
-    │       ├── get-capabilities.ts
-    │       ├── check-association.ts
-    │       └── associate-token.ts
+    │   └── lifecycle/
+    │       ├── create-stablecoin.ts
+    │       ├── delete-stablecoin.ts
+    │       ├── get-stablecoin-info.ts
+    │       ├── pause-stablecoin.ts
+    │       ├── unpause-stablecoin.ts
+    │       └── update-stablecoin.ts
     ├── schemas/
-    │   ├── AGENTS.md              # Schema-specific agent instructions
-    │   ├── atoms.ts               # Common schema atoms (accountId, memo, etc.)
-    │   ├── lifecycle.schema.ts
-    │   ├── access-control.schema.ts
-    │   ├── compliance.schema.ts
-    │   ├── treasury.schema.ts
-    │   ├── reserve.schema.ts
-    │   ├── advanced.schema.ts
-    │   └── query.schema.ts
+    │   ├── atoms.ts
+    │   └── lifecycle.schema.ts
     ├── service/
-    │   ├── stablecoin-sdk.service.ts
-    │   └── network.service.ts
+    │   └── stablecoin-sdk.service.ts
     └── utils/
-        ├── decimals.ts            # Token decimal conversions
-        ├── mirrornode.ts          # Mirror node URL mappings
-        └── constants.ts           # Plugin constants and tool names
+        └── constants.ts
 ```
 
 **Key Structural Changes from Template:**
-- **AGENTS.md files** at three levels (root, tools, schemas) for AI agent guidance
-- **Separate schemas/ folder** for centralized Zod validation
+- **Schemas live in `src/schemas/`** for centralized Zod validation
 - **Path aliases** (@/) configured in tsconfig.json
-- **examples/** includes both agent.ts factory and cli-chat.ts demo
-- **No plugins/** subfolder - tools are organized by category directly
-- **utils/** includes template utilities (decimals, mirrornode)
+- **examples/** currently contains a single SDK smoke test script
+- **Tools** are currently implemented only for the **lifecycle** category
+- **utils/** currently contains only `constants.ts`
 
 ### 5.2 Core Files
 
@@ -291,7 +238,6 @@ import { Context, Plugin } from 'hedera-agent-kit';
 // Import all tool factories
 import createStablecoinTool from '@/tools/lifecycle/create-stablecoin';
 import getStablecoinInfoTool from '@/tools/lifecycle/get-stablecoin-info';
-import grantRoleTool from '@/tools/access-control/grant-role';
 // ... import all other tools
 
 export default {
@@ -321,21 +267,28 @@ export * from '@/utils/constants';
 
 ---
 
-### 5.3 Tool Implementation Pattern (from Template)
+### 5.3 Tool Implementation Pattern
 
-Every tool follows the template's standard pattern:
+Implemented tools follow the standard Hedera Agent Kit pattern (tool constants, schema factories, `PromptGenerator`, and an `execute` method).
+
+Implemented lifecycle tools:
+- `src/tools/lifecycle/create-stablecoin.ts`
+- `src/tools/lifecycle/get-stablecoin-info.ts`
+- `src/tools/lifecycle/update-stablecoin.ts`
+- `src/tools/lifecycle/pause-stablecoin.ts`
+- `src/tools/lifecycle/unpause-stablecoin.ts`
+- `src/tools/lifecycle/delete-stablecoin.ts`
 
 ```typescript
-// Example: src/tools/treasury/cash-in.ts
-import { z } from 'zod';
-import { Client, type Context, type Tool, PromptGenerator } from 'hedera-agent-kit';
-import { cashInSchema } from '@/schemas/treasury.schema';
-import { StablecoinSDKService } from '@/service/stablecoin-sdk.service';
+// Example: src/tools/lifecycle/delete-stablecoin.ts
+import { type Context, type Tool, PromptGenerator } from 'hedera-agent-kit';
+import { StableCoin, DeleteRequest } from '@hashgraph/stablecoin-npm-sdk';
+import { deleteStablecoinSchema } from '@/schemas/lifecycle.schema';
+import { DELETE_STABLECOIN_TOOL } from '@/utils/constants';
+import { getStablecoinSDK } from '@/service/stablecoin-sdk.service';
 
-// Tool method constant
-export const CASH_IN_TOOL = 'stablecoin.cash_in';
+export const TOOL_NAME = DELETE_STABLECOIN_TOOL;
 
-// Tool description generator
 const toolPrompt = (context: Context = {}) => {
   const contextSnippet = PromptGenerator.getContextSnippet(context);
   const usageInstructions = PromptGenerator.getParameterUsageInstructions();
@@ -343,47 +296,39 @@ const toolPrompt = (context: Context = {}) => {
   return `
 ${contextSnippet}
 
-This tool mints new stablecoin tokens and transfers them to a target account.
+This tool permanently deletes a stablecoin token. This operation is irreversible.
 
 Parameters:
-- tokenId (string, required): Stablecoin token ID (e.g., 0.0.123456)
-- amount (number, required): Amount to mint in base units
-- targetAccount (string, required): Recipient account ID
+- tokenId (string, required): Hedera token ID (e.g., "0.0.123456")
 
 ${usageInstructions}
 `;
 };
 
-// Tool factory
 export default (context: Context): Tool => ({
-  method: CASH_IN_TOOL,
-  name: 'Cash In Stablecoin',
+  method: TOOL_NAME,
+  name: 'Delete Stablecoin',
   description: toolPrompt(context),
-  parameters: cashInSchema(context),
-
-  execute: async (
-    client: Client,
-    context: Context,
-    params: z.infer<ReturnType<typeof cashInSchema>>
-  ) => {
+  parameters: deleteStablecoinSchema(context),
+  execute: async (client, context, params) => {
     try {
-      // Call Stablecoin Studio SDK
-      const result = await StablecoinSDKService.cashIn({
-        tokenId: params.tokenId,
-        amount: params.amount,
-        targetAccount: params.targetAccount,
-      });
+      const sdk = getStablecoinSDK();
+      await sdk.ensureInitialized(client, context);
+
+      const request = new DeleteRequest({ tokenId: params.tokenId });
+      const success = await StableCoin.delete(request);
+
+      if (!success) throw new Error('Delete operation returned false');
 
       return {
-        raw: result,
-        humanMessage: `Successfully minted ${params.amount} tokens to ${params.targetAccount}. Transaction ID: ${result.transactionId}`,
+        raw: { tokenId: params.tokenId, success },
+        humanMessage: `Successfully deleted stablecoin ${params.tokenId}.`,
       };
     } catch (error) {
-      const message = `Failed to cash in: ${error instanceof Error ? error.message : String(error)}`;
-      return {
-        raw: { error: message },
-        humanMessage: message,
-      };
+      const message = `Failed to delete stablecoin: ${
+        error instanceof Error ? error.message : String(error)
+      }`;
+      return { raw: { error: message }, humanMessage: message };
     }
   },
 });
@@ -399,25 +344,18 @@ export default (context: Context): Tool => ({
 
 ---
 
-### 5.4 Schema Pattern (from Template)
+### 5.4 Schema Pattern
 
 ```typescript
-// Example: src/schemas/treasury.schema.ts
+// Example: src/schemas/lifecycle.schema.ts
 import { z } from 'zod';
 import type { Context } from 'hedera-agent-kit';
-import { accountIdSchema, tokenIdSchema } from '@/schemas/atoms';
+import { tokenIdSchema } from '@/schemas/atoms';
 
-export const cashInSchema = (_context: Context = {}) =>
+export const getStablecoinInfoSchema = (_context: Context = {}) =>
   z.object({
-    tokenId: tokenIdSchema.describe('Stablecoin token ID'),
-    amount: z
-      .number()
-      .positive()
-      .describe('Amount to mint in base units (e.g., 1000000 for 1.0 with 6 decimals)'),
-    targetAccount: accountIdSchema.describe('Recipient account for minted tokens'),
+    tokenId: tokenIdSchema.describe('Token ID of the stablecoin to query'),
   });
-
-export type CashInParams = z.infer<ReturnType<typeof cashInSchema>>;
 ```
 
 **Schema Elements:**
@@ -456,37 +394,27 @@ export const roleSchema = z
 
 ---
 
-### 5.6 Utility Files (from Template)
+### 5.6 Utility Files
 
-#### **decimals.ts**
-```typescript
-// Token decimal conversion utilities
-export function toBaseUnits(amount: number, decimals: number): bigint {
-  return BigInt(Math.floor(amount * Math.pow(10, decimals)));
-}
-
-export function fromBaseUnits(amount: bigint, decimals: number): number {
-  return Number(amount) / Math.pow(10, decimals);
-}
-```
-
-#### **mirrornode.ts**
-```typescript
-// Mirror node URL mappings
-export const MIRRORNODE_URLS = {
-  mainnet: 'https://mainnet-public.mirrornode.hedera.com',
-  testnet: 'https://testnet.mirrornode.hedera.com',
-} as const;
-
-export function getMirrorNodeUrl(network: 'mainnet' | 'testnet'): string {
-  return MIRRORNODE_URLS[network];
-}
-```
+The current codebase includes a single utility module under `src/utils`.
 
 #### **constants.ts**
-Tool name constants:
 
 ```typescript
+// Lifecycle tools
+export const CREATE_STABLECOIN_TOOL = 'stablecoin.create_stablecoin';
+export const GET_STABLECOIN_INFO_TOOL = 'stablecoin.get_stablecoin_info';
+export const UPDATE_STABLECOIN_TOOL = 'stablecoin.update_stablecoin';
+export const PAUSE_STABLECOIN_TOOL = 'stablecoin.pause_stablecoin';
+export const UNPAUSE_STABLECOIN_TOOL = 'stablecoin.unpause_stablecoin';
+export const DELETE_STABLECOIN_TOOL = 'stablecoin.delete_stablecoin';
+
+// Plugin constants
+export const DEFAULT_DECIMALS = 6;
+export const DEFAULT_INITIAL_SUPPLY = 0;
+export const MAX_DECIMALS = 18;
+export const MAX_SUPPLY_LIMIT = 9223372036854775807; // Max int64
+
 export type NetworkConfig = {
   mirrorNodeUrl: string;
   jsonRpcUrl: string;
@@ -507,68 +435,11 @@ export const NETWORK_CONFIGS: Record<string, NetworkConfig> = {
 };
 ```
 
-#### **constants.ts**
-Tool method names and constants:
-
-```typescript
-// Lifecycle tools
-export const CREATE_STABLECOIN_TOOL = 'create_stablecoin_tool';
-export const GET_STABLECOIN_INFO_TOOL = 'get_stablecoin_info_tool';
-export const UPDATE_STABLECOIN_TOOL = 'update_stablecoin_tool';
-export const PAUSE_STABLECOIN_TOOL = 'pause_stablecoin_tool';
-export const UNPAUSE_STABLECOIN_TOOL = 'unpause_stablecoin_tool';
-export const DELETE_STABLECOIN_TOOL = 'delete_stablecoin_tool';
-
-// Access control tools
-export const GRANT_ROLE_TOOL = 'grant_role_tool';
-export const REVOKE_ROLE_TOOL = 'revoke_role_tool';
-// ... etc
-
-// Plugin constants
-export const DEFAULT_DECIMALS = 6;
-export const DEFAULT_INITIAL_SUPPLY = 0;
-export const MAX_SUPPLY_LIMIT = 1000000000;
-```
-
-#### **errors.ts**
-Custom error classes:
-
-```typescript
-export class StablecoinAgentError extends Error {
-  constructor(message: string, public code: string) {
-    super(message);
-    this.name = 'StablecoinAgentError';
-  }
-}
-
-export class SDKInitializationError extends StablecoinAgentError {
-  constructor(message: string) {
-    super(message, 'SDK_INIT_ERROR');
-  }
-}
-
-export class InvalidParameterError extends StablecoinAgentError {
-  constructor(message: string) {
-    super(message, 'INVALID_PARAMETER');
-  }
-}
-
-export class TokenNotFoundError extends StablecoinAgentError {
-  constructor(tokenId: string) {
-    super(`Stablecoin ${tokenId} not found`, 'TOKEN_NOT_FOUND');
-  }
-}
-
-export class InsufficientPermissionsError extends StablecoinAgentError {
-  constructor(operation: string) {
-    super(`Insufficient permissions for ${operation}`, 'INSUFFICIENT_PERMISSIONS');
-  }
-}
-```
-
 ---
 
 ## 6. Feature Groups and Tools
+
+Only the **Stablecoin Lifecycle** tools are implemented in the current codebase. The remaining tool groups below are planned.
 
 ### Plugin 1: Stablecoin Lifecycle Plugin
 
@@ -1144,25 +1015,15 @@ export class StablecoinSDKService {
 Each tool should follow this structure:
 
 ```typescript
-import { Tool, Context } from 'hedera-agent-kit';
-import { z } from 'zod';
-import { TOOL_NAME_CONSTANT } from '../constants';
-import { promptGenerator } from '../utils/prompt-generator';
-import { responseFormatter } from '../utils/response-formatter';
-import { normalizeParameters } from '../parameter-normaliser';
-
-// Zod schema
-const toolParametersSchema = (context: Context) =>
-  z.object({
-    tokenId: z.string().describe('The Hedera token ID (e.g., 0.0.123456)'),
-    amount: z.number().positive().describe('Amount in base units'),
-    // ... other parameters
-  });
+import { type Context, type Tool, PromptGenerator } from 'hedera-agent-kit';
+import { StableCoin, GetStableCoinDetailsRequest } from '@hashgraph/stablecoin-npm-sdk';
+import { getStablecoinInfoSchema } from '@/schemas/lifecycle.schema';
+import { GET_STABLECOIN_INFO_TOOL } from '@/utils/constants';
+import { getStablecoinSDK } from '@/service/stablecoin-sdk.service';
 
 // Tool description generator
 const toolPrompt = (context: Context) => {
-  const contextSnippet = promptGenerator.getContextSnippet(context);
-  const accountDesc = promptGenerator.getAccountParameterDescription('targetAccount', context);
+  const contextSnippet = PromptGenerator.getContextSnippet(context);
 
   return `
 ${contextSnippet}
@@ -1171,51 +1032,37 @@ This tool [does something specific].
 
 Parameters:
 - tokenId (string, required): The stablecoin token ID to operate on
-- ${accountDesc}
-- amount (number, required): The amount in base units (e.g., for 6 decimals, 1000000 = 1.0 tokens)
 
 Important:
-- The account must have the appropriate role for this operation
-- Token must be associated with target account
-- This operation requires [specific role] role
+- This is a read-only operation
 
 Example usage:
-- To mint 1000 tokens: amount = 1000000000 (for 6 decimals)
+- Get details: {"tokenId": "0.0.123456"}
 
-${promptGenerator.getParameterUsageInstructions()}
+${PromptGenerator.getParameterUsageInstructions()}
 `;
 };
 
-// Execution logic
-const executeTool = async (client, context, params) => {
-  try {
-    // 1. Normalize parameters
-    const normalized = await normalizeParameters(params, context);
-
-    // 2. Call Stablecoin Studio SDK
-    const result = await StableCoin.someMethod(normalized);
-
-    // 3. Format response
-    return responseFormatter.formatSuccess({
-      transactionId: result.transactionId,
-      message: `Successfully completed operation`,
-      details: result
-    });
-  } catch (error) {
-    return responseFormatter.formatError(error);
-  }
-};
-
 // Tool export
-export const tool = (context: Context): Tool => ({
-  method: TOOL_NAME_CONSTANT,
+export default (context: Context): Tool => ({
+  method: GET_STABLECOIN_INFO_TOOL,
   name: 'Human Readable Tool Name',
   description: toolPrompt(context),
-  parameters: toolParametersSchema(context),
-  execute: executeTool,
-});
+  parameters: getStablecoinInfoSchema(context),
+  execute: async (client, context, params) => {
+    const sdk = getStablecoinSDK();
+    await sdk.ensureInitialized(client, context);
 
-export default tool;
+    // Call Stablecoin Studio SDK
+    const request = new GetStableCoinDetailsRequest({ id: params.tokenId });
+    const result = await StableCoin.getInfo(request);
+
+    return {
+      raw: result,
+      humanMessage: 'Successfully completed operation',
+    };
+  },
+});
 ```
 
 ### 9.3 Testing Requirements
@@ -1224,21 +1071,21 @@ export default tool;
 - **Integration Tests:** Test end-to-end flows with testnet
 - **Coverage Target:** 80% minimum
 - **Test Structure:**
-  ```typescript
-  describe('create_stablecoin_tool', () => {
-    it('should create stablecoin with valid parameters', async () => {
-      // Test implementation
-    });
-
-    it('should handle missing optional parameters', async () => {
-      // Test implementation
-    });
-
-    it('should throw error for invalid parameters', async () => {
-      // Test implementation
-    });
+```typescript
+describe('create_stablecoin_tool', () => {
+  it('should create stablecoin with valid parameters', async () => {
+    // Test implementation
   });
-  ```
+
+  it('should handle missing optional parameters', async () => {
+    // Test implementation
+  });
+
+  it('should throw error for invalid parameters', async () => {
+    // Test implementation
+  });
+});
+```
 
 ### 9.4 Documentation Standards
 
