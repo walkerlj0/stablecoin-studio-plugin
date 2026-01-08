@@ -65,39 +65,6 @@ const toolkit = new HederaLangchainToolkit({
 const tools = toolkit.tools;
 ```
 
-### Using with LangChain
-
-```typescript
-import { ChatOpenAI } from '@langchain/openai';
-import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
-import { ChatPromptTemplate } from '@langchain/core/prompts';
-
-const llm = new ChatOpenAI({ model: 'gpt-4' });
-
-const prompt = ChatPromptTemplate.fromMessages([
-  ['system', 'You are a helpful assistant managing stablecoins on Hedera.'],
-  ['human', '{input}'],
-  ['placeholder', '{agent_scratchpad}'],
-]);
-
-const agent = await createToolCallingAgent({
-  llm,
-  tools: toolkit.tools,
-  prompt,
-});
-
-const agentExecutor = new AgentExecutor({
-  agent,
-  tools: toolkit.tools,
-});
-
-// Run agent
-const result = await agentExecutor.invoke({
-  input: 'Create a stablecoin called MyUSD with 6 decimals and max supply of 1 million',
-});
-
-console.log(result.output);
-```
 
 ## Available Plugins
 
@@ -213,7 +180,7 @@ npx tsx examples/stablecoin-studio-sdk-smoke-test.ts
 
 - [Setup Guide](./SETUP.md) - Detailed setup instructions
 - [Product Requirements Document](./.windsurf/PRD.md) - Complete feature specification
-- [Architecture](./docs/ARCHITECTURE.md) - Plugin architecture details
+- [Architecture](./ARCHITECTURE.md) - Plugin architecture details
 
 ## Development
 
@@ -236,17 +203,24 @@ npm run lint
 
 ## Architecture
 
-The plugin follows the Hedera Agent Kit plugin architecture:
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed architecture.
+
+The plugin follows the Hedera Agent Kit plugin architecture (7 plugin groups: Lifecycle, Access Control, Compliance, Treasury, Reserve, Advanced, Query).
 
 ```
-stablecoin-studio-plugin
-├── 7 Plugin Groups
-│   ├── Lifecycle, Access Control, Compliance
-│   ├── Treasury, Reserve, Advanced, Query
-├── 43 Total Tools
-├── Service Layer (SDK integration)
-├── Parameter Validation (Zod schemas)
-└── LangChain Integration
+stablecoin-studio-plugin/
+├── src/
+│   ├── index.ts
+│   ├── tools/
+│   │   └── lifecycle/
+│   ├── service/
+│   ├── schemas/
+│   └── utils/
+├── examples/
+├── .windsurf/
+├── ARCHITECTURE.md
+├── README.md
+└── SETUP.md
 ```
 
 ## Requirements
