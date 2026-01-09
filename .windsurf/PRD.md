@@ -441,7 +441,7 @@ export const NETWORK_CONFIGS: Record<string, NetworkConfig> = {
 
 Only the **Stablecoin Lifecycle** tools are implemented in the current codebase. The remaining tool groups below are planned.
 
-### Group 1: Stablecoin Lifecycle Plugin
+### Group 1: Stablecoin Lifecycle Tool
 
 **Purpose:** Create, configure, and manage stablecoin lifecycle
 
@@ -500,7 +500,7 @@ Only the **Stablecoin Lifecycle** tools are implemented in the current codebase.
 
 ---
 
-### Group 2: Access Control Plugin
+### Group 2: Access Control Tool
 
 **Purpose:** Manage role-based access control for stablecoin operations
 
@@ -571,7 +571,7 @@ Only the **Stablecoin Lifecycle** tools are implemented in the current codebase.
 
 ---
 
-### Group 3: Compliance Plugin
+### Group 3: Compliance Tool
 
 **Purpose:** Manage KYC status and account freezing for compliance
 
@@ -619,7 +619,7 @@ Only the **Stablecoin Lifecycle** tools are implemented in the current codebase.
 
 ---
 
-### Group 4: Treasury Plugin
+### Group 4: Treasury Tool
 
 **Purpose:** Mint, burn, and transfer stablecoin tokens
 
@@ -679,7 +679,7 @@ Only the **Stablecoin Lifecycle** tools are implemented in the current codebase.
 
 ---
 
-### Group 5: Reserve Plugin
+### Group 5: Reserve Tool
 
 **Purpose:** Manage proof of reserve and collateralization tracking
 
@@ -702,7 +702,7 @@ Only the **Stablecoin Lifecycle** tools are implemented in the current codebase.
 
 ---
 
-### Group 6: Advanced Features Plugin
+### Group 6: Advanced Features Tool
 
 **Purpose:** Hold management (escrow) and custom fees
 
@@ -770,7 +770,7 @@ Only the **Stablecoin Lifecycle** tools are implemented in the current codebase.
 
 ---
 
-### Group 7: Query Plugin
+### Group 7: Query Tools
 
 **Purpose:** Read stablecoin state and account information
 
