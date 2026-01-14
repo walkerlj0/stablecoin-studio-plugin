@@ -7,6 +7,7 @@ import updateStablecoinTool from '@/tools/lifecycle/update-stablecoin';
 import pauseStablecoinTool from '@/tools/lifecycle/pause-stablecoin';
 import unpauseStablecoinTool from '@/tools/lifecycle/unpause-stablecoin';
 import deleteStablecoinTool from '@/tools/lifecycle/delete-stablecoin';
+import { CREATE_STABLECOIN_TOOL, DELETE_STABLECOIN_TOOL, UNPAUSE_STABLECOIN_TOOL, PAUSE_STABLECOIN_TOOL, UPDATE_STABLECOIN_TOOL, GET_STABLECOIN_INFO_TOOL } from '@/utils/constants';
 
 /**
  * Stablecoin Studio Plugin for Hedera Agent Kit
@@ -21,7 +22,7 @@ import deleteStablecoinTool from '@/tools/lifecycle/delete-stablecoin';
  * - Advanced features (holds/escrow, custom fees)
  * - Query and analytics
  */
-export default {
+export const stablecoinStudioPlugin: Plugin = {
   name: 'stablecoin-studio-plugin',
   version: '1.0.0',
   description:
@@ -45,7 +46,16 @@ export default {
       // - Query tools (5 tools)
     ];
   },
-} satisfies Plugin;
+};
+
+export const stablecoinStudioToolNames = {
+  CREATE_STABLECOIN_TOOL,
+  GET_STABLECOIN_INFO_TOOL,
+  UPDATE_STABLECOIN_TOOL,
+  PAUSE_STABLECOIN_TOOL,
+  UNPAUSE_STABLECOIN_TOOL,
+  DELETE_STABLECOIN_TOOL,
+} as const;
 
 // Export tool name constants for filtering and reference
 export * from '@/utils/constants';
@@ -53,3 +63,5 @@ export * from '@/utils/constants';
 // Export schemas for external use
 export * from '@/schemas/atoms';
 export * from '@/schemas/lifecycle.schema';
+
+export default { stablecoinStudioPlugin, stablecoinStudioToolNames };

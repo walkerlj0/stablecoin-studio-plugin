@@ -4,12 +4,12 @@
  */
 
 // Lifecycle tools
-export const CREATE_STABLECOIN_TOOL = 'stablecoin.create_stablecoin';
-export const GET_STABLECOIN_INFO_TOOL = 'stablecoin.get_stablecoin_info';
-export const UPDATE_STABLECOIN_TOOL = 'stablecoin.update_stablecoin';
-export const PAUSE_STABLECOIN_TOOL = 'stablecoin.pause_stablecoin';
-export const UNPAUSE_STABLECOIN_TOOL = 'stablecoin.unpause_stablecoin';
-export const DELETE_STABLECOIN_TOOL = 'stablecoin.delete_stablecoin';
+export const CREATE_STABLECOIN_TOOL = 'stablecoin_create_stablecoin';
+export const GET_STABLECOIN_INFO_TOOL = 'stablecoin_get_stablecoin_info';
+export const UPDATE_STABLECOIN_TOOL = 'stablecoin_update_stablecoin';
+export const PAUSE_STABLECOIN_TOOL = 'stablecoin_pause_stablecoin';
+export const UNPAUSE_STABLECOIN_TOOL = 'stablecoin_unpause_stablecoin';
+export const DELETE_STABLECOIN_TOOL = 'stablecoin_delete_stablecoin';
 
 // Plugin constants
 export const DEFAULT_DECIMALS = 6;
