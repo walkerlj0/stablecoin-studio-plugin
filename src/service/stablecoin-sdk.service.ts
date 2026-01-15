@@ -1,3 +1,4 @@
+import { Client } from '@hashgraph/sdk';
 import {
   Network,
   InitializationRequest,
@@ -48,43 +49,78 @@ export class StablecoinSDKService {
   /**
    * Initialize and connect to the Hedera network using SDK.
    * This method is idempotent - calling it multiple times with the same config is safe.
+   * If config changes, it will re-initialize with the new configuration.
+   * 
+   * @param requireAuth - If false, only initializes network without connecting (for read-only operations)
    */
-  async ensureInitialized(client: any, context: Context = {}): Promise<void> {
-    const config = this.getConfigFromContext(client, context);
+  async ensureInitialized(client: any, context: Context = {}, requireAuth: boolean = true): Promise<void> {
+    const config = this.getConfigFromContext(client, context, requireAuth);
 
     // Check if we're already initialized with the same config
-    if (this.isInitialized && this.isConnected && this.configMatches(config)) {
+    if (this.isInitialized && (!requireAuth || this.isConnected) && this.configMatches(config)) {
       return;
     }
 
-    // Initialize network
-    await this.initializeNetwork(config);
+    // If config changed, reset state before re-initializing
+    // This ensures clean state when switching accounts/networks
+    if (this.isInitialized && !this.configMatches(config)) {
+      this.isInitialized = false;
+      this.isConnected = false;
+    }
 
-    // Connect to network
-    await this.connectToNetwork(config);
+    try {
+      // Initialize network (always required)
+      await this.initializeNetwork(config);
 
-    this.currentConfig = config;
-    this.isInitialized = true;
-    this.isConnected = true;
+      // Connect to network only if authentication is required
+      if (requireAuth) {
+        await this.connectToNetwork(config);
+        this.isConnected = true;
+      }
+
+      // Update state
+      this.currentConfig = config;
+      this.isInitialized = true;
+    } catch (error) {
+      // Reset state on error to allow retry
+      this.isInitialized = false;
+      this.isConnected = false;
+      this.currentConfig = null;
+      throw error;
+    }
   }
 
   /**
    * Extract SDK configuration from client and context.
+   * @param requireAuth - If false, private key is optional (for read-only operations)
    */
-  private getConfigFromContext(client: any, context: Context): SDKConfig {
+  private getConfigFromContext(client: Client, context: Context, requireAuth: boolean = true): SDKConfig {
     // Extract from environment variables or context
     const network = (process.env.NETWORK || (context as any).network || 'testnet') as 'mainnet' | 'testnet';
     const accountId = process.env.HEDERA_ACCOUNT_ID || client?.operatorAccountId?.toString() || '';
+    
+    // Try to extract private key from multiple sources
     const privateKey = process.env.HEDERA_PRIVATE_KEY || '';
 
-    if (!accountId || !privateKey) {
-      throw new Error('Missing required credentials: HEDERA_ACCOUNT_ID and HEDERA_PRIVATE_KEY must be set');
+    // Validate credentials based on whether auth is required
+    if (requireAuth) {
+      if (!accountId) {
+        throw new Error(
+          'Missing account ID. Set HEDERA_ACCOUNT_ID environment variable or ensure client has operatorAccountId set.'
+        );
+      }
+      
+      if (!privateKey) {
+        throw new Error(
+          'Missing private key. Set HEDERA_PRIVATE_KEY environment variable or ensure client has operatorPrivateKey set.'
+        );
+      }
     }
 
     return {
       network,
-      accountId,
-      privateKey,
+      accountId: accountId || '',
+      privateKey: privateKey || '',
       factoryAddress: process.env.FACTORY_ADDRESS || (context as any).factoryAddress,
       resolverAddress: process.env.RESOLVER_ADDRESS || (context as any).resolverAddress,
     };
@@ -123,17 +159,44 @@ export class StablecoinSDKService {
   }
 
   /**
+   * Detect key type based on private key format.
+   * ED25519: 64 hex characters (32 bytes)
+   * ECDSA: 66+ hex characters (33+ bytes), often with 0x prefix
+   */
+  private detectKeyType(privateKey: string): 'ED25519' | 'ECDSA' {
+    const cleanKey = privateKey.startsWith('0x') ? privateKey.slice(2) : privateKey;
+    
+    // ED25519 keys are exactly 64 hex characters
+    if (cleanKey.length === 64 && /^[0-9a-fA-F]+$/.test(cleanKey)) {
+      return 'ED25519';
+    }
+    
+    return 'ECDSA';
+  }
+
+  /**
    * Connect to the Hedera network with credentials.
+   * Requires a valid private key. For read-only operations, skip this step.
    */
   private async connectToNetwork(config: SDKConfig): Promise<void> {
+    if (!config.privateKey) {
+      throw new Error(
+        'Private key is required for network connection. ' +
+        'Use ensureInitialized(client, context, false) for read-only operations.'
+      );
+    }
+
     const mirrorNodeConfig = this.getMirrorNodeConfig(config.network);
     const rpcNodeConfig = this.getRPCNodeConfig(config.network);
+
+    // Detect key type automatically
+    const keyType = this.detectKeyType(config.privateKey);
 
     const account = {
       accountId: config.accountId,
       privateKey: {
         key: config.privateKey,
-        type: 'ED25519',
+        type: keyType,
       },
     };
 
@@ -198,24 +261,22 @@ export class StablecoinSDKService {
 
   /**
    * Get default factory address for the network.
-   * These are placeholder values - should be configured per environment.
    */
   private getDefaultFactoryAddress(network: string): string {
     if (network === 'mainnet') {
-      return '0.0.0'; // TODO: Set actual mainnet factory address
+      return '0.0.0'; // TODO: Configure mainnet factory address
     }
-    return '0.0.6431833'; // Testnet factory address from examples
+    return '0.0.6431833'; // Testnet factory address
   }
 
   /**
    * Get default resolver address for the network.
-   * These are placeholder values - should be configured per environment.
    */
   private getDefaultResolverAddress(network: string): string {
     if (network === 'mainnet') {
-      return '0.0.0'; // TODO: Set actual mainnet resolver address
+      return '0.0.0'; // TODO: Configure mainnet resolver address
     }
-    return '0.0.6431794'; // Testnet resolver address from examples
+    return '0.0.6431794'; // Testnet resolver address
   }
 
   /**
